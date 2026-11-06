@@ -19,11 +19,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#141a2e;font-family:sy
 #knob{position:absolute;left:35px;top:35px;width:60px;height:60px;border-radius:50%;background:#3a2618dd;border:3px solid #1c120b}
 #btns{position:fixed;right:16px;bottom:18px;display:grid;grid-template-columns:repeat(3,58px);gap:8px}
 #btns .rb{width:58px;height:58px}
-#prompt{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c1410dd;border:2px solid #6b4a33;padding:6px 14px;border-radius:10px;font-size:14px;display:none;max-width:40vw;text-align:center}
-#msg{position:fixed;left:50%;top:12px;transform:translateX(-50%);background:#2a1e3add;border:2px solid #7f77dd;padding:8px 16px;border-radius:10px;font-size:14px;display:none;max-width:60vw;text-align:center;z-index:5}
+#prompt{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c1410dd;border:2px solid #6b4a33;padding:6px 14px;border-radius:10px;font-size:14px;display:none;max-width:40vmax;text-align:center}
+#msg{position:fixed;left:50%;top:12px;transform:translateX(-50%);background:#2a1e3add;border:2px solid #7f77dd;padding:8px 16px;border-radius:10px;font-size:14px;display:none;max-width:60vmax;text-align:center;z-index:5}
 #quest{position:fixed;left:10px;top:92px;max-width:230px;background:#1c1410aa;border-left:3px solid #ef9f27;padding:5px 8px;font-size:12px;line-height:1.35}
 #modal,#start{position:fixed;inset:0;background:#0b0e1acc;display:none;align-items:center;justify-content:center;z-index:10}
-.box{background:#231a2e;border:3px solid #6b4a33;border-radius:14px;padding:16px 18px;max-width:min(92vw,520px);max-height:88vh;overflow:auto;font-size:14px;line-height:1.5;user-select:text}
+.box{background:#231a2e;border:3px solid #6b4a33;border-radius:14px;padding:16px 18px;max-width:min(90vmax,520px);max-height:86vmin;overflow:auto;font-size:14px;line-height:1.5;user-select:text}
 .box h2{margin:0 0 8px;font-size:19px;color:#fac775}.box button,.btn{background:#5a3d2b;border:2px solid #2e1d12;color:#f3dcb4;border-radius:8px;padding:7px 14px;font-size:14px;margin:4px 4px 0 0;cursor:pointer}
 .box input{background:#14101c;border:2px solid #6b4a33;color:#fff;border-radius:8px;padding:7px;font-size:15px;width:180px}
 .sw{display:inline-block;width:30px;height:30px;border-radius:50%;margin:3px;border:3px solid #0006;cursor:pointer}.sw.on{border-color:#fac775}
@@ -34,7 +34,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#141a2e;font-family:sy
 </style>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 </head>
-<body>
+<body><div id="root" style="position:fixed;left:0;top:0;width:100%;height:100%;transform-origin:0 0">
 <canvas id="c"></canvas>
 <div id="bars">
 <div class="bar">❤️<i><b id="bhp" style="background:#e24b4a"></b></i></div>
@@ -57,7 +57,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#141a2e;font-family:sy
 <p style="font-size:12px;opacity:.8">Телефон: джойстик слева, ⬆️⬇️ — взлёт и спуск, ✋ — действие (есть, пить, гладить, говорить), ⚡ — рывок, 👁️ — прозрение (видно скрытое), 💗 — лечение.<br>ПК: WASD, Пробел/C, E, Q, R, H, V — камера, J — дневник.<br>Прогресс сохраняется сам.</p>
 <p id="ldg">Загрузка моделей…</p><button class="btn" id="play" style="display:none;font-size:18px;padding:10px 26px" style="font-size:18px;padding:10px 26px">Играть</button></div></div>
 
-<script type="module">
+</div><script type="module">
 import * as THREE from 'three';import{clone as skClone}from'three/addons/utils/SkeletonUtils.js';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id);
 const DEF={stage:0,ate:false,drank:false,hp:100,food:100,water:100,mana:100,pos:[0,0,20],yaw:0,body:'#f1efe8',mane:'#d4537e',wing:'#ffffff',wingType:'feather',outfit:'none',orbs:[],runes:[],clues:[],fr:{},cd:{},follow:[],flowers:0,family:null,riddle:0,lo:null,unlocked:['feather','none','scarf'],music:true,cam:0,tod:.3};
@@ -66,10 +66,12 @@ function save(){try{localStorage.setItem('pegasus_rpg',JSON.stringify(S))}catch(
 
 // ---------- world ----------
 const MOB=matchMedia('(pointer:coarse)').matches;const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:!MOB,powerPreference:'high-performance'});
-let PR=MOB?1:Math.min(devicePixelRatio,1.5);renderer.setPixelRatio(PR);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
+const PRMAX=Math.min(devicePixelRatio,MOB?1.6:1.5);let PR=PRMAX;renderer.setPixelRatio(PR);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 const scene=new THREE.Scene();const SKY=0x2b3352;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,60,260);
 const camera=new THREE.PerspectiveCamera(65,1,.1,1500);
-function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}resize();addEventListener('resize',resize);
+let ROT=false;function resize(){ROT=MOB&&innerHeight>innerWidth;const W=ROT?innerHeight:innerWidth,Hh=ROT?innerWidth:innerHeight,rt=document.getElementById('root');
+ rt.style.width=W+'px';rt.style.height=Hh+'px';rt.style.transform=ROT?`translateX(${innerWidth}px) rotate(90deg)`:'none';renderer.setSize(W,Hh);camera.aspect=W/Hh;camera.updateProjectionMatrix()}
+const loc=(dx,dy)=>ROT?[dy,-dx]:[dx,dy];resize();addEventListener('resize',resize);
 const hemi=new THREE.HemisphereLight(0x8a96d0,0x2c3a22,.95);scene.add(hemi);const moonL=new THREE.DirectionalLight(0x8fa6ff,0);moonL.position.set(100,150,-80);scene.add(moonL);
 const sun=new THREE.DirectionalLight(0xffc49a,1.15);sun.position.set(-120,140,90);scene.add(sun);
 const moon=new THREE.Mesh(new THREE.SphereGeometry(22,16,12),new THREE.MeshBasicMaterial({color:0xfff1d0,fog:false}));moon.position.set(-500,330,400);scene.add(moon);
@@ -143,7 +145,7 @@ try{await Promise.all(Object.keys(SCL).map(async n=>{SRC[n]=await loadM(n+'.json
 $('ldg').textContent='';$('play').style.display='';
 function inst3(n){const m=skClone(SRC[n].scene),mats={};m.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const arr=Array.isArray(o.material),ms=arr?o.material:[o.material];const nm=ms.map(x=>mats[x.name]||(mats[x.name]=x.clone()));o.material=arr?nm:nm[0]}});
  m.scale.setScalar(SCL[n]);const g=new THREE.Group();g.add(m);return{g,m,mix:new THREE.AnimationMixer(m),clips:SRC[n].animations,mats,cur:null,curA:null,eat:0}}
-function anim(E,n,ts=1){E.mix.timeScale=ts;if(E.cur===n)return;const c=THREE.AnimationClip.findByName(E.clips,n);if(!c)return;const a=E.mix.clipAction(c);a.reset().fadeIn(.25).play();if(E.curA)E.curA.fadeOut(.25);E.curA=a;E.cur=n}
+function anim(E,n,ts=1){E.mix.timeScale=ts;if(E.cur===n)return;const c=THREE.AnimationClip.findByName(E.clips,n);if(!c)return;const a=E.mix.clipAction(c);a.reset().fadeIn(.4).play();if(E.curA)E.curA.fadeOut(.4);E.curA=a;E.cur=n}
 const FSPH=new THREE.SphereGeometry(1,16,10);
 function wing(s,M){const w=new THREE.Group();w.userData.s=s;const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.075,1.3,6,12),M);arm.rotation.z=Math.PI/2;arm.position.x=s*.75;w.add(arm);
  const fe=(x,z,len,ang,wid)=>{const f=new THREE.Group();f.position.set(s*x,0,z);f.rotation.y=-s*ang;w.add(f);const e=new THREE.Mesh(FSPH,M);e.scale.set(wid,.03,len/2);e.position.z=-len/2;f.add(e)};
@@ -163,7 +165,7 @@ function setLook(E,c){const M=E.mats;M.Main?.color.set(c.body);M.Main_Light?.col
  if(c.wingType==='star'){w.color.set('#fac775');w.emissive.set('#ba7517');w.emissiveIntensity=.8}w.needsUpdate=true;for(const k in E.O)E.O[k].visible=c.outfit===k}
 function animPeg(E,t,flying,moving,vy,dt){for(const w of E.wings){const s=w.userData.s,fz=flying?s*(Math.sin(t*(vy>0?10:6))*.65+.15):s*(.25+Math.sin(t*1.5)*.03),fy=flying?s*.1:s*1.25;
   w.rotation.z+=(fz-w.rotation.z)*Math.min(1,dt*10);w.rotation.y+=(fy-w.rotation.y)*Math.min(1,dt*6)}
- if(E.eat>0){E.eat-=dt;anim(E,'Eating')}else if(flying)anim(E,'Gallop',.35);else if(moving<.05)anim(E,'Idle');else if(moving<.8)anim(E,'Walk');else anim(E,'Gallop');E.mix.update(dt)}
+ if(E.eat>0){E.eat-=dt;anim(E,'Eating')}else if(flying)anim(E,'Gallop',.35);else if(moving<.05)anim(E,'Idle');else if(moving<.8)anim(E,'Walk',.6+moving);else anim(E,'Gallop',Math.min(1.3,.7+moving*.4));E.mix.update(dt)}
 const player=makePeg();setLook(player,S);scene.add(player.g);
 const P={pos:new THREE.Vector3(...S.pos),yaw:S.yaw,vy:0,flying:false,dash:0,reveal:0};
 const CLUES=['Белая звезда всегда загорается последней.','Синяя звезда загорается сразу после красной.','Золотая звезда загорается раньше красной.','Зелёная звезда никогда не горит рядом с золотой.','Красная звезда — не первая.'];
@@ -272,27 +274,27 @@ const inp={f:0,t:0,up:false,down:false},keys={};
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys[e.code]=true;const m={KeyE:act,KeyQ:()=>spell('dash'),KeyR:()=>spell('see'),KeyH:()=>spell('heal'),KeyV:()=>{S.cam^=1},KeyJ:()=>isOpen()?closeM():journal(),KeyM:toggleMusic,Escape:closeM}[e.code];if(m&&!e.repeat)m()});
 addEventListener('keyup',e=>keys[e.code]=false);
 const joy=$('joy'),knob=$('knob');let jid=null,jx=0,jy=0;
-function jmove(e){const r=joy.getBoundingClientRect();let dx=e.clientX-r.left-65,dy=e.clientY-r.top-65;const l=Math.hypot(dx,dy);if(l>50){dx*=50/l;dy*=50/l}jx=dx/50;jy=dy/50;knob.style.left=35+dx+'px';knob.style.top=35+dy+'px'}
+function jmove(e){const r=joy.getBoundingClientRect();let[dx,dy]=loc(e.clientX-r.left-r.width/2,e.clientY-r.top-r.height/2);const l=Math.hypot(dx,dy);if(l>50){dx*=50/l;dy*=50/l}jx=dx/50;jy=dy/50;knob.style.left=35+dx+'px';knob.style.top=35+dy+'px'}
 joy.addEventListener('pointerdown',e=>{jid=e.pointerId;joy.setPointerCapture(jid);jmove(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===jid)jmove(e)});
 const jend=e=>{if(e.pointerId!==jid)return;jid=null;jx=jy=0;knob.style.left=knob.style.top='35px'};joy.addEventListener('pointerup',jend);joy.addEventListener('pointercancel',jend);
 const hold=(id,k)=>{const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();inp[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>inp[k]=false))};hold('kUp','up');hold('kDown','down');
 const tap=(id,f)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();f()});
 tap('kAct',act);tap('kDash',()=>spell('dash'));tap('kSee',()=>spell('see'));tap('kHeal',()=>spell('heal'));tap('bCam',()=>S.cam^=1);tap('bLook',looks);tap('bJour',journal);tap('bMus',toggleMusic);
 function toggleMusic(){S.music=!S.music;$('bMus').textContent=S.music?'🔊':'🔇';
-let rotSkip=false;const chkRot=()=>{$('rot').style.display=MOB&&!rotSkip&&innerHeight>innerWidth?'flex':'none'};addEventListener('resize',chkRot);$('rotok').onclick=()=>{rotSkip=true;chkRot()};chkRot();if(master)master.gain.value=S.music?1:0;if(S.music&&AC)nextT=AC.currentTime+.1}
+let rotSkip=false;const chkRot=()=>{};addEventListener('resize',chkRot);$('rotok').onclick=()=>{rotSkip=true;chkRot()};chkRot();if(master)master.gain.value=S.music?1:0;if(S.music&&AC)nextT=AC.currentTime+.1}
 $('bMus').textContent=S.music?'🔊':'🔇';
 $('play').onclick=()=>{$('start').style.display='none';startAudio();if(!S.music&&master)master.gain.value=0;msg('Добро пожаловать! Задание — слева вверху. 📜 — дневник.',5000)};
 
 let camYaw=0,camPitch=0,drag=null;
 $('c').addEventListener('pointerdown',e=>{drag={id:e.pointerId,x:e.clientX,y:e.clientY}});
-addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;camYaw-=(e.clientX-drag.x)*.008;camPitch=THREE.MathUtils.clamp(camPitch+(e.clientY-drag.y)*.006,-.7,1.1);drag.x=e.clientX;drag.y=e.clientY});
+addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const[ddx,ddy]=loc(e.clientX-drag.x,e.clientY-drag.y);camYaw-=ddx*.008;camPitch=THREE.MathUtils.clamp(camPitch+ddy*.006,-.7,1.1);drag.x=e.clientX;drag.y=e.clientY});
 const dEnd=e=>{if(drag&&e.pointerId===drag.id)drag=null};addEventListener('pointerup',dEnd);addEventListener('pointercancel',dEnd);
-const SKYK=[[0,'#0b0f20'],[.21,'#0b0f20'],[.27,'#6b4a6e'],[.34,'#4a6390'],[.66,'#4a6390'],[.73,'#8a5560'],[.79,'#0b0f20'],[1,'#0b0f20']].map(([k,c])=>[k,new THREE.Color(c)]);
+const SKYK=[[0,'#151b33'],[.21,'#151b33'],[.27,'#6b4a6e'],[.34,'#5b78a8'],[.66,'#5b78a8'],[.73,'#8a5560'],[.79,'#151b33'],[1,'#151b33']].map(([k,c])=>[k,new THREE.Color(c)]);
 const skyC=new THREE.Color(),tmpC=new THREE.Color();
 function dayNight(dt){S.tod=(S.tod+dt/720)%1;const d=S.tod;for(let i=0;i<SKYK.length-1;i++)if(d>=SKYK[i][0]&&d<=SKYK[i+1][0]){skyC.copy(SKYK[i][1]).lerp(SKYK[i+1][1],(d-SKYK[i][0])/(SKYK[i+1][0]-SKYK[i][0]));break}
  scene.background.copy(skyC);scene.fog.color.copy(skyC);const a=(d-.25)*Math.PI*2,e=Math.sin(a);sun.position.set(Math.cos(a)*200,e*200,80);
- sun.intensity=Math.max(0,e)*1.4;sun.color.setHSL(.08,.8,.55+.3*Math.min(1,Math.max(0,e)));hemi.intensity=.28+.75*THREE.MathUtils.clamp(e*2+.3,0,1);
- moonL.intensity=e<0?.5:0;starMat.opacity=THREE.MathUtils.clamp(-e*3+.2,0,1);moon.position.set(-Math.cos(a)*600,-e*500+100,-300)}
+ sun.intensity=Math.max(0,e)*1.4;sun.color.setHSL(.08,.8,.55+.3*Math.min(1,Math.max(0,e)));hemi.intensity=.5+.65*THREE.MathUtils.clamp(e*2+.3,0,1);
+ moonL.intensity=e<0?.8:0;starMat.opacity=THREE.MathUtils.clamp(-e*3+.2,0,1);moon.position.set(-Math.cos(a)*600,-e*500+100,-300)}
 // ---------- minimap ----------
 const mm=$('mm').getContext('2d'),mmBg=document.createElement('canvas');mmBg.width=mmBg.height=120;{const c=mmBg.getContext('2d');for(let y=0;y<120;y+=2)for(let x=0;x<120;x+=2){const h=H(x*5-300,y*5-300);c.fillStyle=h<.3?'#24507a':h<16?'#3d6628':h<34?'#59574f':'#c9c6bb';c.fillRect(x,y,2,2)}c.fillStyle='#8a8880';c.beginPath();c.arc((ISL.x+300)/5,(ISL.z+300)/5,5,0,7);c.fill()}
 const mp=(x,z)=>[(x+300)/5,(z+300)/5];
@@ -303,27 +305,27 @@ function drawMM(tg){mm.save();mm.clearRect(0,0,120,120);mm.beginPath();mm.arc(60
  const[px,py]=mp(P.pos.x,P.pos.z);mm.translate(px,py);mm.rotate(-P.yaw+Math.PI);mm.fillStyle='#e24b4a';mm.beginPath();mm.moveTo(0,-5);mm.lineTo(4,4);mm.lineTo(-4,4);mm.fill();mm.restore()}
 
 // ---------- loop ----------
-const clock=new THREE.Clock();let t=0,saveT=0,uiT=0,fpsN=0,fpsT=0;const fwd=new THREE.Vector3(),camPos=new THREE.Vector3(),look=new THREE.Vector3();
+const clock=new THREE.Clock();let SF=0,STR=0,ROLL=0,t=0,saveT=0,uiT=0,fpsN=0,fpsT=0;const tmpL=new THREE.Vector3(),fwd=new THREE.Vector3(),camPos=new THREE.Vector3(),look=new THREE.Vector3();
 function moveFollower(obj,pos,i,isPeg,dt){const ox=Math.sin(P.yaw),oz=Math.cos(P.yaw),side=(i%2?1:-1)*(2+(i>>1)*1.5);
  const tx=P.pos.x-ox*(4+i*1.6)+oz*side,tz=P.pos.z-oz*(4+i*1.6)-ox*side;const dx=tx-pos.x,dz=tz-pos.z,d=Math.hypot(dx,dz);
  if(d>60){pos.set(tx,P.pos.y,tz)}const sp=Math.min(d*2,isPeg?30:20);if(d>.5){pos.x+=dx/d*sp*dt;pos.z+=dz/d*sp*dt;obj.rotation.y=Math.atan2(dx,dz)}
  const gy2=G(pos.x,pos.z,pos.y);pos.y=isPeg?THREE.MathUtils.lerp(pos.y,Math.max(gy2,P.flying?P.pos.y:gy2),dt*3):gy2;return d}
 function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);t+=dt;
- let f=-jy,tr=jx;if(keys.KeyW||keys.ArrowUp)f=1;if(keys.KeyS||keys.ArrowDown)f=-.6;if(keys.KeyA||keys.ArrowLeft)tr=-1;if(keys.KeyD||keys.ArrowRight)tr=1;
+ let f=Math.abs(jy)<.12?0:-jy,tr=Math.abs(jx)<.12?0:jx;if(keys.KeyW||keys.ArrowUp)f=1;if(keys.KeyS||keys.ArrowDown)f=-.6;if(keys.KeyA||keys.ArrowLeft)tr=-1;if(keys.KeyD||keys.ArrowRight)tr=1;
  const up=inp.up||keys.Space,down=inp.down||keys.KeyC||keys.ShiftLeft;if(isOpen()){f=tr=0}
- P.yaw-=tr*2.2*dt;fwd.set(Math.sin(P.yaw),0,Math.cos(P.yaw));
+ if(isOpen()){f=tr=0}SF+=(f-SF)*Math.min(1,dt*5);STR+=(tr-STR)*Math.min(1,dt*7);f=SF;tr=STR;P.yaw-=tr*2*dt;fwd.set(Math.sin(P.yaw),0,Math.cos(P.yaw));
  if(P.dash>0)P.dash-=dt;if(P.reveal>0)P.reveal-=dt;
  const sp=(P.flying?24:(Math.abs(f)>.8?14:9))*(P.dash>0?2.6:1);P.pos.addScaledVector(fwd,f*sp*dt);
  if(up&&!isOpen()){P.flying=true;P.vy=THREE.MathUtils.lerp(P.vy,12,dt*5)}else if(down&&!isOpen())P.vy=THREE.MathUtils.lerp(P.vy,-14,dt*5);else P.vy=THREE.MathUtils.lerp(P.vy,P.flying?Math.sin(t*2)*.4:0,dt*4);
  P.pos.y+=P.vy*dt;P.pos.x=THREE.MathUtils.clamp(P.pos.x,-290,290);P.pos.z=THREE.MathUtils.clamp(P.pos.z,-290,290);P.pos.y=Math.min(P.pos.y,170);
  const gr=G(P.pos.x,P.pos.z,P.pos.y);if(P.pos.y<=gr+.02){P.pos.y=gr;if(P.flying&&!up)P.flying=false;if(P.vy<0)P.vy=0}else if(!P.flying){P.pos.y=Math.max(gr,P.pos.y-20*dt)}
- player.g.position.copy(P.pos);player.g.rotation.set(P.flying?-P.vy*.03:0,P.yaw,P.flying?-tr*.35:0);animPeg(player,t,P.flying,Math.abs(f)*(P.dash>0?2:1),P.vy,dt);dayNight(dt);
+ player.g.position.copy(P.pos);ROLL+=((P.flying?-tr*.4:0)-ROLL)*Math.min(1,dt*4);player.g.rotation.set(P.flying?-P.vy*.025:0,P.yaw,ROLL);animPeg(player,t,P.flying,Math.abs(f)*(P.dash>0?2:1),P.vy,dt);dayNight(dt);
  // camera
  const moving=Math.abs(f)>.05||Math.abs(tr)>.05||up||down;if(moving&&!drag){const k=Math.exp(-dt*4);camYaw*=k;camPitch*=k}
  const cy=P.yaw+camYaw,cd=new THREE.Vector3(Math.sin(cy),0,Math.cos(cy));
  if(S.cam){camPos.copy(P.pos).addScaledVector(fwd,2.1);camPos.y+=3.05;camera.position.copy(camPos);look.copy(camPos).addScaledVector(cd,10);look.y-=10*Math.tan(camPitch*.8)+(P.flying?P.vy*.1:.8);camera.lookAt(look)}
  else{const dist=P.flying?13:10,pc=Math.max(-.2,camPitch+.32);camPos.copy(P.pos).addScaledVector(cd,-dist*Math.cos(pc));camPos.y+=1.8+dist*Math.sin(pc);camPos.y=Math.max(camPos.y,G(camPos.x,camPos.z,camPos.y)+1.2);
-  camera.position.lerp(camPos,drag?1:1-Math.exp(-dt*7));look.copy(P.pos);look.y+=2;camera.lookAt(look)}
+  camera.position.lerp(camPos,drag?1:1-Math.exp(-dt*5));look.lerp(tmpL.copy(P.pos).setY(P.pos.y+2),1-Math.exp(-dt*10));camera.lookAt(look)}
  // stats
  const fm=P.flying?1.5:1;S.food=Math.max(0,S.food-.18*fm*dt);S.water=Math.max(0,S.water-.25*fm*dt);S.mana=Math.min(100,S.mana+1.2*dt);
  if(S.food<=0||S.water<=0)S.hp-=1.2*dt;else if(S.food>50&&S.water>50)S.hp=Math.min(100,S.hp+.5*dt);
@@ -353,7 +355,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
  if(msgT&&performance.now()>msgT){$('msg').style.display='none';msgT=0}
  uiT-=dt;if(uiT<=0){uiT=.25;$('bhp').style.width=S.hp+'%';$('bfood').style.width=S.food+'%';$('bwater').style.width=S.water+'%';$('bmana').style.width=S.mana+'%';questText();const tg=stageTarget();beam.visible=!!tg;if(tg)beam.position.set(tg[0],G(tg[0],tg[2])+130,tg[2]);drawMM(tg)}
  saveT+=dt;if(saveT>8){saveT=0;S.pos=[P.pos.x,P.pos.y,P.pos.z];S.yaw=P.yaw;save()}
- fpsN++;fpsT+=dt;if(fpsT>3){const fps=fpsN/fpsT;if(fps<40&&PR>.6){PR=Math.max(.6,PR-.15);renderer.setPixelRatio(PR)}fpsN=0;fpsT=0}
+ fpsN++;fpsT+=dt;if(fpsT>3){const fps=fpsN/fpsT;if(fps<42&&PR>.75){PR=Math.max(.75,PR-.15);renderer.setPixelRatio(PR)}else if(fps>57&&PR<PRMAX){PR=Math.min(PRMAX,PR+.1);renderer.setPixelRatio(PR)}fpsN=0;fpsT=0}
  renderer.render(scene,camera)}
 if(S.pos[1]<G(S.pos[0],S.pos[2]))P.pos.y=G(P.pos.x,P.pos.z);
 loop();
