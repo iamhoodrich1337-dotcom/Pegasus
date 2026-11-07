@@ -60,14 +60,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:#141a2e;font-family:sy
 </div><script type="module">
 import * as THREE from 'three';import{clone as skClone}from'three/addons/utils/SkeletonUtils.js';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id);
-const DEF={stage:0,ate:false,drank:false,hp:100,food:100,water:100,mana:100,pos:[0,0,20],yaw:0,body:'#f1efe8',mane:'#d4537e',wing:'#ffffff',wingType:'feather',outfit:'none',orbs:[],runes:[],clues:[],fr:{},cd:{},follow:[],flowers:0,family:null,riddle:0,lo:null,unlocked:['feather','none','scarf'],music:true,cam:0,tod:.3};
+const DEF={stage:0,ate:false,drank:false,hp:100,food:100,water:100,mana:100,pos:[0,0,20],yaw:0,body:'#f1efe8',mane:'#d4537e',wing:'#ffffff',wingType:'feather',outfit:'none',orbs:[],runes:[],clues:[],fr:{},cd:{},follow:[],flowers:0,family:null,riddle:0,lo:null,unlocked:['feather','none','scarf'],music:true,cam:0,tod:.3,feath:[],sphinx:0,ice:false};
 let S;try{S=Object.assign(JSON.parse(JSON.stringify(DEF)),JSON.parse(localStorage.getItem('pegasus_rpg')||'{}'))}catch(e){S=JSON.parse(JSON.stringify(DEF))}
 function save(){try{localStorage.setItem('pegasus_rpg',JSON.stringify(S))}catch(e){}}
 
 // ---------- world ----------
 const MOB=matchMedia('(pointer:coarse)').matches;const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:!MOB,powerPreference:'high-performance'});
 const PRMAX=Math.min(devicePixelRatio,MOB?1.6:1.5);let PR=PRMAX;renderer.setPixelRatio(PR);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
-const scene=new THREE.Scene();const SKY=0x2b3352;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,60,260);
+const scene=new THREE.Scene();const SKY=0x2b3352;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,60,300);
 const camera=new THREE.PerspectiveCamera(65,1,.1,1500);
 let ROT=false;function resize(){ROT=MOB&&innerHeight>innerWidth;const W=ROT?innerHeight:innerWidth,Hh=ROT?innerWidth:innerHeight,rt=document.getElementById('root');
  rt.style.width=W+'px';rt.style.height=Hh+'px';rt.style.transform=ROT?`translateX(${innerWidth}px) rotate(90deg)`:'none';renderer.setSize(W,Hh);camera.aspect=W/Hh;camera.updateProjectionMatrix()}
@@ -77,28 +77,30 @@ const sun=new THREE.DirectionalLight(0xffc49a,1.15);sun.position.set(-120,140,90
 const moon=new THREE.Mesh(new THREE.SphereGeometry(22,16,12),new THREE.MeshBasicMaterial({color:0xfff1d0,fog:false}));moon.position.set(-500,330,400);scene.add(moon);
 const starMat=new THREE.PointsMaterial({color:0xfff6e0,size:2.2,sizeAttenuation:false,fog:false,transparent:true});{const n=900,p=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*6.28,b=Math.random()*1.3+.15,r=900;p[i*3]=Math.cos(a)*Math.cos(b)*r;p[i*3+1]=Math.sin(b)*r;p[i*3+2]=Math.sin(a)*Math.cos(b)*r}
 const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));scene.add(new THREE.Points(g,starMat))}
-const lakes=[[80,60,55],[-120,-20,35]];
+const lakes=[[80,60,55],[-120,-20,35],[380,-150,45],[-250,330,40]];
 function H(x,z){let h=2.2*Math.sin(x*.021)*Math.cos(z*.017)+1.6*Math.sin(x*.047+z*.033)+.8*Math.sin(z*.09)+1.6;
- if(z<-110){const t=-z-110;h+=t*.35*(1+.4*Math.sin(x*.06))+6*Math.abs(Math.sin(x*.03+z*.02))*Math.min(1,t/40)}
+ if(z<-110){const t=Math.min(-z-110,160);h+=t*.35*(1+.4*Math.sin(x*.06))+6*Math.abs(Math.sin(x*.03+z*.02))*Math.min(1,t/40)}
+ if(x<-330)h+=Math.min(-x-330,120)*.5*(1+.3*Math.sin(z*.05));
+ if(z>320){const k=Math.min(1,(z-320)/30);h=h*(1-k)+k*(1.5+11*THREE.MathUtils.smoothstep(Math.sin(x*.035)*Math.cos(z*.045),.15,.35))}
  for(const[lx,lz,r]of lakes){const d=Math.hypot(x-lx,z-lz);if(d<r)h-=7*Math.pow(1-d/r,.7)}return h}
 const ISL={x:-150,z:140,y:70,r:26};
 function G(x,z,y=999){let h=Math.max(H(x,z),0);if(y>ISL.y-4&&Math.hypot(x-ISL.x,z-ISL.z)<ISL.r)h=Math.max(h,ISL.y);return h}
 const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,flatShading:true,roughness:.85},o));
-{const tg=new THREE.PlaneGeometry(600,600,110,110);tg.rotateX(-Math.PI/2);const pa=tg.attributes.position,cols=[],c=new THREE.Color(),c2=new THREE.Color('#2a4a1c');
+{const tg=new THREE.PlaneGeometry(1000,1000,150,150);tg.rotateX(-Math.PI/2);const pa=tg.attributes.position,cols=[],c=new THREE.Color(),c2=new THREE.Color('#2a4a1c');
 for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i),h=H(x,z);pa.setY(i,h);
- if(h<.7)c.set('#7a6c4a');else if(h<16)c.set('#3d6628').lerp(c2,Math.random()*.6);else if(h<34)c.set('#59574f');else c.set('#c9c6bb');cols.push(c.r,c.g,c.b)}
+ if(z>320)c.set(h>6?'#9a5a3a':'#c0925a');else if(x<-330&&h>12)c.set('#dfe4ee');else if(x>320&&h>.7)c.set('#5a6a28').lerp(new THREE.Color('#7a5a20'),Math.random()*.5);else if(h<.7)c.set('#7a6c4a');else if(h<16)c.set('#3d6628').lerp(c2,Math.random()*.6);else if(h<34)c.set('#59574f');else c.set('#c9c6bb');cols.push(c.r,c.g,c.b)}
 tg.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));tg.computeVertexNormals();scene.add(new THREE.Mesh(tg,new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.95})))}
-const water=new THREE.Mesh(new THREE.PlaneGeometry(600,600),new THREE.MeshStandardMaterial({color:0x24507a,transparent:true,opacity:.82,roughness:.2,metalness:.3}));water.rotation.x=-Math.PI/2;water.position.y=.05;scene.add(water);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(1000,1000),new THREE.MeshStandardMaterial({color:0x24507a,transparent:true,opacity:.82,roughness:.2,metalness:.3}));water.rotation.x=-Math.PI/2;water.position.y=.05;scene.add(water);
 const POI={altar:[30,30],tower:[-70,-100],grove:[180,-40],bells:[80,-2]};
-function freeSpot(minH=.8,maxH=16,area=280){for(let k=0;k<50;k++){const x=(Math.random()*2-1)*area,z=(Math.random()*2-1)*area,h=H(x,z);if(h>minH&&h<maxH&&Object.values(POI).every(p=>Math.hypot(p[0]-x,p[1]-z)>12)&&Math.hypot(x,z-20)>8)return[x,h,z]}return[0,H(0,0),0]}
+function freeSpot(minH=.8,maxH=16,area=480){for(let k=0;k<50;k++){const x=(Math.random()*2-1)*area,z=(Math.random()*2-1)*area,h=H(x,z);if(h>minH&&h<maxH&&z<320&&Object.values(POI).every(p=>Math.hypot(p[0]-x,p[1]-z)>12)&&Math.hypot(x,z-20)>8)return[x,h,z]}return[0,H(0,0),0]}
 const dm=new THREE.Object3D();
 function inst(geo,m,n,place,colorFn){const im=new THREE.InstancedMesh(geo,m,n);for(let i=0;i<n;i++){dm.position.set(0,0,0);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);place(dm,i);dm.updateMatrix();im.setMatrixAt(i,dm.matrix);if(colorFn)im.setColorAt(i,colorFn(i))}scene.add(im);return im}
-{const T=[];for(let i=0;i<320;i++)T.push(freeSpot(1,26));for(let i=0;i<14;i++){const a=Math.random()*6.28,r=6+Math.random()*16;T.push([ISL.x+Math.cos(a)*r,ISL.y,ISL.z+Math.sin(a)*r])}
+{const T=[];for(let i=0;i<(MOB?420:560);i++)T.push(freeSpot(1,26));for(let i=0;i<14;i++){const a=Math.random()*6.28,r=6+Math.random()*16;T.push([ISL.x+Math.cos(a)*r,ISL.y,ISL.z+Math.sin(a)*r])}
 const sc=T.map(()=>.8+Math.random()*.9);
 inst(new THREE.CylinderGeometry(.25,.4,2.5,6),mat('#4a3424'),T.length,(d,i)=>{d.position.set(T[i][0],T[i][1]+1.2*sc[i],T[i][2]);d.scale.setScalar(sc[i])});
 const cg=new THREE.ConeGeometry(2.2,4.5,7),tm=mat('#ffffff');
-inst(cg,tm,T.length,(d,i)=>{d.position.set(T[i][0],T[i][1]+4*sc[i],T[i][2]);d.scale.setScalar(sc[i])},i=>new THREE.Color().setHSL(.3+Math.random()*.06,.45,.18+Math.random()*.06));
-inst(cg,tm,T.length,(d,i)=>{d.position.set(T[i][0],T[i][1]+6.3*sc[i],T[i][2]);d.scale.setScalar(sc[i]*.72)},i=>new THREE.Color().setHSL(.3,.45,.22));}
+inst(cg,tm,T.length,(d,i)=>{d.position.set(T[i][0],T[i][1]+4*sc[i],T[i][2]);d.scale.setScalar(sc[i])},i=>T[i][0]>320?new THREE.Color().setHSL(.02+Math.random()*.09,.75,.32):T[i][0]<-330?new THREE.Color().setHSL(.4,.25,.25):new THREE.Color().setHSL(.3+Math.random()*.06,.45,.18+Math.random()*.06));
+inst(cg,tm,T.length,(d,i)=>{d.position.set(T[i][0],T[i][1]+6.3*sc[i],T[i][2]);d.scale.setScalar(sc[i]*.72)},i=>T[i][0]>320?new THREE.Color().setHSL(.08,.8,.38):T[i][0]<-330?new THREE.Color().setHSL(.55,.15,.8):new THREE.Color().setHSL(.3,.45,.22));}
 inst(new THREE.ConeGeometry(.18,1.1,4),mat('#ffffff'),MOB?700:1500,(d,i)=>{const[x,h,z]=freeSpot(.8,15);d.position.set(x,h+.4,z);d.rotation.set(Math.random()*.4-.2,0,Math.random()*.4-.2)},()=>new THREE.Color().setHSL(.16+Math.random()*.1,.5,.35));
 const flowerCols=['#d4537e','#ed93b1','#afa9ec','#fac775','#f1efe8'];
 inst(new THREE.IcosahedronGeometry(.28,0),mat('#ffffff',{emissive:0x221122}),MOB?350:700,(d,i)=>{const[x,h,z]=freeSpot(.8,12);d.position.set(x,h+.55,z)},()=>new THREE.Color(flowerCols[Math.random()*5|0]));
@@ -123,6 +125,12 @@ const STARS=[['gold','золотую','#fac775'],['red','красную','#e24b4
 const pillars=[];[2,4,0,3,1].forEach((si,k)=>{const a=k/5*6.28,x=ISL.x+Math.cos(a)*12,z=ISL.z+Math.sin(a)*12;const p=new THREE.Mesh(new THREE.CylinderGeometry(.6,.8,4,8),mat('#d3d1c7'));p.position.set(x,ISL.y+2,z);scene.add(p);
  const o=new THREE.Mesh(new THREE.IcosahedronGeometry(.8,0),mat(STARS[si][2],{emissive:STARS[si][2],emissiveIntensity:.08}));o.position.set(x,ISL.y+4.8,z);scene.add(o);pillars.push({si,o,x,z})});
 let starSeq=[];
+// side quests
+const FEATH=[[350,-100],[430,-20],[380,90],[460,150],[340,200]];
+const featherMeshes=FEATH.map(([x,z])=>{const m=new THREE.Mesh(new THREE.ConeGeometry(.35,1.8,6),mat('#fac775',{emissive:0xef9f27,emissiveIntensity:1.4}));m.rotation.z=.6;m.position.set(x,H(x,z)+1.6,z);scene.add(m);return m});
+const SPH={x:0,z:410};{const y=H(SPH.x,SPH.z),sm=mat('#c9a066');const b=new THREE.Mesh(new THREE.BoxGeometry(5,4,10),sm);b.position.set(SPH.x,y+2,SPH.z);scene.add(b);
+ const hd=new THREE.Mesh(new THREE.BoxGeometry(3.4,4,3.4),sm);hd.position.set(SPH.x,y+5.5,SPH.z-4.5);scene.add(hd);const cr=new THREE.Mesh(new THREE.ConeGeometry(2.6,3,4),mat('#534ab7'));cr.position.set(SPH.x,y+8.8,SPH.z-4.5);cr.rotation.y=.78;scene.add(cr)}
+const ICE={x:-430,z:200};const iceM=new THREE.Mesh(new THREE.OctahedronGeometry(1.4),mat('#b5d4f4',{emissive:0x378add,emissiveIntensity:1.6,transparent:true,opacity:.85}));iceM.position.set(ICE.x,H(ICE.x,ICE.z)+2,ICE.z);iceM.visible=false;scene.add(iceM);
 // orbs
 const ORBP=[[ISL.x,ISL.z,ISL.y+1.6],[0,-175],[POI.grove[0]+8,POI.grove[1]+6],[-150,-45],[130,130],[-220,-70],[60,-60]];
 const orbGeo=new THREE.IcosahedronGeometry(.7,1),orbMat=mat('#fac775',{emissive:0xef9f27,emissiveIntensity:1.5});
@@ -162,6 +170,9 @@ function setLook(E,c){const M=E.mats;M.Main?.color.set(c.body);M.Main_Light?.col
  if(M.Hooves){M.Hooves.color.set('#e0b040');M.Hooves.metalness=.7;M.Hooves.roughness=.3}
  const w=E.wingMat;w.color.set(c.wing||'#fff');w.emissive.set(0);w.transparent=false;w.opacity=1;
  if(c.wingType==='crystal'){w.color.set('#9fe1cb');w.emissive.set('#1d9e75');w.emissiveIntensity=.6;w.transparent=true;w.opacity=.8}
+ if(c.wingType==='sunset'){w.color.set('#f0997b');w.emissive.set('#d85a30');w.emissiveIntensity=.6}
+ if(c.wingType==='sand'){w.color.set('#e8c07a');w.emissive.set('#854f0b');w.emissiveIntensity=.35}
+ if(c.wingType==='ice'){w.color.set('#e6f1fb');w.emissive.set('#378add');w.emissiveIntensity=.5;w.transparent=true;w.opacity=.8}
  if(c.wingType==='star'){w.color.set('#fac775');w.emissive.set('#ba7517');w.emissiveIntensity=.8}w.needsUpdate=true;for(const k in E.O)E.O[k].visible=c.outfit===k}
 function animPeg(E,t,flying,moving,vy,dt){for(const w of E.wings){const s=w.userData.s,fz=flying?s*(Math.sin(t*(vy>0?10:6))*.65+.15):s*(.25+Math.sin(t*1.5)*.03),fy=flying?s*.1:s*1.25;
   w.rotation.z+=(fz-w.rotation.z)*Math.min(1,dt*10);w.rotation.y+=(fy-w.rotation.y)*Math.min(1,dt*6)}
@@ -170,9 +181,9 @@ const player=makePeg();setLook(player,S);scene.add(player.g);
 const P={pos:new THREE.Vector3(...S.pos),yaw:S.yaw,vy:0,flying:false,dash:0,reveal:0};
 const CLUES=['Белая звезда всегда загорается последней.','Синяя звезда загорается сразу после красной.','Золотая звезда загорается раньше красной.','Зелёная звезда никогда не горит рядом с золотой.','Красная звезда — не первая.'];
 const AN=[['Fox','Лис Рыжик',0,[10,40]],['Wolf','Волчонок Уголёк',1,[-40,20]],['Deer','Оленуха Буся',2,[60,-20]],['Stag','Олень Тихон',3,[-100,90]],['Alpaca','Альпака Пушинка',4,[120,-80]],
- ['Fox','Лисичка Искорка',-1,[20,0]],['Bull','Бычок Буян',-1,[-20,60]],['Deer','Оленёнок Ромашка',-1,[-60,-40]],['Alpaca','Альпака Зефирка',-1,[150,100]],['Wolf','Волчица Вьюга',-1,[-160,30]],['Stag','Олень Гром',-1,[90,130]],['Fox','Лис Хвостик',-1,[-10,-70]]];
+ ['Fox','Лисичка Искорка',-1,[20,0]],['Bull','Бычок Буян',-1,[-20,60]],['Deer','Оленёнок Ромашка',-1,[-60,-40]],['Alpaca','Альпака Зефирка',-1,[150,100]],['Wolf','Волчица Вьюга',-1,[-160,30]],['Stag','Олень Гром',-1,[90,130]],['Fox','Лис Хвостик',-1,[-10,-70]],['Stag','Олень Багрец',-1,[390,-60]],['Fox','Лис Кленовый',-1,[410,60]],['Fox','Фенек Песчинка',-1,[60,360]],['Alpaca','Альпака Дюна',-1,[-80,380]],['Wolf','Волк Иней',-1,[-380,100]],['Wolf','Волчица Метель',-1,[-400,-60]]];
 const animals=AN.map(([type,name,clue,home],i)=>{const E=inst3(type);const[x,z]=home;E.g.position.set(x,G(x,z),z);scene.add(E.g);return{id:'a'+i,type,name,clue,c:E,home,tx:x,tz:z,wait:0,eat:false}});
-const PG=[['Луна','#cecbf6','#534ab7','#ffffff',[-30,80],1],['Зефир','#f1efe8','#5dcaa5','#e6f1fb',[100,20],0],['Искра','#fac775','#e24b4a','#faeeda',[-120,-90],1],['Буря','#444441','#85b7eb','#888780',[40,-120],0],['Роса','#9fe1cb','#f4c0d1','#ffffff',[160,150],1],['Сирень','#afa9ec','#f1efe8','#eeedfe',[-200,40],0]];
+const PG=[['Луна','#cecbf6','#534ab7','#ffffff',[-30,80],1],['Зефир','#f1efe8','#5dcaa5','#e6f1fb',[100,20],0],['Искра','#fac775','#e24b4a','#faeeda',[-120,-90],1],['Буря','#444441','#85b7eb','#888780',[40,-120],0],['Роса','#9fe1cb','#f4c0d1','#ffffff',[160,150],1],['Сирень','#afa9ec','#f1efe8','#eeedfe',[-200,40],0],['Осень','#ef9f27','#993c1d','#faeeda',[400,0],1],['Мираж','#e8c07a','#5f5e5a','#faeeda',[0,380],0],['Снежка','#ffffff','#85b7eb','#e6f1fb',[-410,150],1]];
 const pegs=PG.map(([name,b,m,w,home,fly],i)=>{const E=makePeg();setLook(E,{body:b,mane:m,wing:w,wingType:'feather',outfit:'none'});E.g.scale.setScalar(.95);scene.add(E.g);
  return{id:'p'+i,name,P:E,home,fly,body:b,ang:Math.random()*6,tx:home[0],tz:home[1],pos:new THREE.Vector3(home[0],G(home[0],home[1]),home[1])}});
 let foal=null;function spawnFoal(){if(!S.family||foal)return;const sp=pegs.find(p=>p.id===S.family);const f=makePeg();setLook(f,{body:sp.body,mane:S.mane,wing:S.wing,wingType:'feather',outfit:'none'});f.g.scale.setScalar(.5);scene.add(f.g);foal={P:f,pos:P.pos.clone()}}
@@ -205,6 +216,10 @@ function questText(){let t='📜 '+STG[S.stage];if(S.stage===1)t+=` (${S.orbs.le
 // ---------- puzzles ----------
 const RID=[['Что можно сломать, даже не прикоснувшись к нему?',['обещание','слово','тишину','тишина','молчание']],['Чем больше из неё берёшь, тем больше она становится. Что это?',['яма','ямка']],['Летит без крыльев, плачет без глаз. Что это?',['туча','облако','тучка']],['Что принадлежит тебе, но другие пользуются этим гораздо чаще, чем ты?',['имя']],['Пегас пролетает одно облако за 3 минуты, а с попутным ветром — вдвое быстрее. Сколько секунд он будет лететь с ветром над 4 облаками? (ответ числом)',['360']]];
 const norm=s=>s.trim().toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9]/g,'');
+const SRID=[['Утром на четырёх, днём на двух, вечером на трёх. Кто это?',['человек','люди']],['Что всегда идёт, но никогда не приходит?',['завтра','время']],['Чем больше сохнет, тем мокрее становится. Что это?',['полотенце']]];
+function sphinx(){const i=S.sphinx;modal(`<h2>Каменный Сфинкс · ${i+1}/3</h2><p>«${SRID[i][0]}»</p><input id="sa" autocomplete="off"><button id="sb2">Ответить</button><p id="sr" class="err"></p><p style="font-size:12px;opacity:.7">Ошибёшься — Сфинкс начнёт сначала.</p>`);
+ const go=()=>{const v=norm($('sa').value);if(!v){$('sr').textContent='Сначала напиши ответ.';return}if(SRID[i][1].map(norm).includes(v)){tone(79,.5);S.sphinx++;if(S.sphinx>=3){closeM();S.unlocked.push('sand');fanfare();msg('🏜️ Сфинкс склонил голову! Открыты Песчаные крылья (🎨)',6000);save()}else sphinx()}else{S.sphinx=0;$('sr').textContent='Сфинкс хмурится… Всё сначала.';setTimeout(sphinx,1500)}};
+ $('sb2').onclick=go;$('sa').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')go()}}
 function riddles(){const i=S.riddle;modal(`<h2>Алтарь загадок · ${i+1}/5</h2><p>${RID[i][0]}</p><input id="ra" autocomplete="off"><button id="rb">Ответить</button><p id="rr" class="err"></p><p style="font-size:12px;opacity:.7">Ошибка — и придётся начать с первой загадки.</p>`);
  const go=()=>{const v=norm($('ra').value);if(!v){$('rr').textContent='Сначала напиши ответ.';return}
   if(RID[i][1].map(norm).includes(v)){tone(79,.5);S.riddle++;if(S.riddle>=5){closeM();setStage(3)}else riddles()}else{S.riddle=0;tone(48,.6,'sawtooth',.2);$('mbox').querySelector('p').innerHTML='Алтарь тускнеет… Неверно. Всё сначала.';setTimeout(riddles,1600)}};
@@ -232,12 +247,12 @@ function lightStar(pl){const si=pl.si;if(starSeq.includes(si))return;starSeq.pus
 
 // ---------- journal & look ----------
 function journal(){const fr=[...animals,...pegs].filter(a=>(S.fr[a.id]||0)>0).map(a=>`${a.name}: ${Math.min(100,S.fr[a.id])}%${S.follow.includes(a.id)?' (с тобой)':''}`).join('<br>')||'Пока ни с кем. Подходи к зверятам и пегасам и жми ✋.';
- modal(`<h2>Дневник</h2><p><b>Задание:</b> ${STG[S.stage]}</p><p>🌸 Цветов: ${S.flowers} · Семья: ${S.family?'есть 💞':'нет'}</p><p><b>Подсказки звёзд:</b><br>${S.clues.map(i=>CLUES[i]).join('<br>')||'—'}</p><p><b>Руны:</b><br>${S.runes.map(i=>RUNET[i]).join('<br>')||'—'}</p><p><b>Дружба:</b><br>${fr}</p><button id="rst" style="opacity:.6">Начать игру заново</button>`);
+ modal(`<h2>Дневник</h2><p><b>Задание:</b> ${STG[S.stage]}</p><p>🌸 Цветов: ${S.flowers} · Семья: ${S.family?'есть 💞':'нет'}</p><p><b>Подсказки звёзд:</b><br>${S.clues.map(i=>CLUES[i]).join('<br>')||'—'}</p><p><b>Доп. задания:</b><br>🍂 Золотые перья в Осеннем лесу (восток): ${S.feath.length}/5<br>🏜️ Загадки Сфинкса в Каньоне (юг): ${S.sphinx>=3?'выполнено':S.sphinx+'/3'}<br>❄️ Кристалл холода на Ледяных пиках (запад) — виден только с 👁️: ${S.ice?'найден':'не найден'}</p><p><b>Руны:</b><br>${S.runes.map(i=>RUNET[i]).join('<br>')||'—'}</p><p><b>Дружба:</b><br>${fr}</p><button id="rst" style="opacity:.6">Начать игру заново</button>`);
  $('rst').onclick=()=>{$('rst').textContent='Точно? Нажми ещё раз';$('rst').onclick=()=>{try{localStorage.removeItem('pegasus_rpg')}catch(e){}location.reload()}}}
 const BODY=['#f1efe8','#d3d1c7','#888780','#2c2c2a','#fac775','#f4c0d1','#cecbf6','#85b7eb','#8a5a3a','#9fe1cb'],MANE=['#d4537e','#7f77dd','#5dcaa5','#ef9f27','#e24b4a','#f1efe8','#2c2c2a','#378add','#fac775'];
 function looks(){const sw=(k,arr)=>arr.map(c=>`<span class="sw ${S[k]===c?'on':''}" data-k="${k}" data-c="${c}" style="background:${c}"></span>`).join('');
  const op=(k,list)=>list.map(([v,n])=>{const l=!S.unlocked.includes(v);return`<span class="opt ${S[k]===v?'on':''} ${l?'lock':''}" data-k="${k}" data-v="${v}">${l?'🔒 ':''}${n}</span>`}).join('');
- modal(`<h2>Внешний вид</h2><p>Окрас</p>${sw('body',BODY)}<p>Грива и хвост</p>${sw('mane',MANE)}<p>Цвет перьев</p>${sw('wing',BODY)}<p>Крылья</p>${op('wingType',[['feather','Перистые'],['crystal','Кристальные'],['star','Звёздные']])}<p>Наряд</p>${op('outfit',[['none','Без наряда'],['scarf','Шарфик'],['saddle','Золотое седло'],['cape','Звёздная попона']])}`);
+ modal(`<h2>Внешний вид</h2><p>Окрас</p>${sw('body',BODY)}<p>Грива и хвост</p>${sw('mane',MANE)}<p>Цвет перьев</p>${sw('wing',BODY)}<p>Крылья</p>${op('wingType',[['feather','Перистые'],['sunset','Закатные'],['sand','Песчаные'],['ice','Ледяные'],['crystal','Кристальные'],['star','Звёздные']])}<p>Наряд</p>${op('outfit',[['none','Без наряда'],['scarf','Шарфик'],['saddle','Золотое седло'],['cape','Звёздная попона']])}`);
  $('mbox').querySelectorAll('.sw').forEach(e=>e.onclick=()=>{S[e.dataset.k]=e.dataset.c;setLook(player,S);looks()});
  $('mbox').querySelectorAll('.opt').forEach(e=>e.onclick=()=>{if(e.classList.contains('lock')){msg('Откроется за прохождение заданий');return}S[e.dataset.k]=e.dataset.v;setLook(player,S);looks()})}
 
@@ -249,6 +264,8 @@ function interactables(){const L=[];const pp=P.pos;
  L.push({p:new THREE.Vector3(POI.altar[0],gy(POI.altar),POI.altar[1]),r:6,label:'Алтарь загадок',act:()=>S.stage===2?riddles():msg(S.stage<2?'Алтарь пока спит. Сначала выполни прошлые задания.':'Загадки разгаданы.')});
  L.push({p:new THREE.Vector3(POI.tower[0],gy(POI.tower),POI.tower[1]+5),r:7,label:'Дверь Древней башни',act:()=>S.stage===3?codeLock():S.stage===7?finalRiddle():msg(S.stage<3?'Дверь запечатана древней магией.':'Башня молчит.')});
  L.push({p:new THREE.Vector3(POI.bells[0],gy(POI.bells),POI.bells[1]),r:8,label:'Колокола озера',act:()=>S.stage===5?simon():msg(S.stage<5?'Колокола молчат.':'Колокола звенят в твою честь.')});
+ L.push({p:new THREE.Vector3(SPH.x,H(SPH.x,SPH.z),SPH.z-7),r:8,label:'Каменный Сфинкс',act:()=>S.sphinx>=3?msg('Сфинкс дремлет. Ты уже разгадал его тайны.'):sphinx()});
+ if(iceM.visible)L.push({p:iceM.position,r:5,label:'Взять Кристалл холода',act:()=>{S.ice=true;S.unlocked.push('ice');iceM.visible=false;fanfare();msg('❄️ Кристалл холода твой! Открыты Ледяные крылья (🎨)',6000);save()}});
  L.push({p:new THREE.Vector3(POI.grove[0],gy(POI.grove),POI.grove[1]),r:7,label:'Сердце Кристальной рощи',act:()=>S.stage===6?lightsOut():msg(S.stage<6?'Кристаллы не отзываются.':'Роща спокойна.')});
  if(S.stage===4)for(const pl of pillars)L.push({p:new THREE.Vector3(pl.x,ISL.y,pl.z),r:3.5,label:`Зажечь ${STARS[pl.si][1]} звезду`,act:()=>lightStar(pl)});
  if(S.stage>=3&&P.reveal>0)runes.forEach((r,i)=>{if(!S.runes.includes(i))L.push({p:r.position,r:4,label:'Прочитать руну',act:()=>{S.runes.push(i);msg(RUNET[i],6000);tone(81,.6);save()}})});
@@ -296,8 +313,8 @@ function dayNight(dt){S.tod=(S.tod+dt/720)%1;const d=S.tod;for(let i=0;i<SKYK.le
  sun.intensity=Math.max(0,e)*1.4;sun.color.setHSL(.08,.8,.55+.3*Math.min(1,Math.max(0,e)));hemi.intensity=.5+.65*THREE.MathUtils.clamp(e*2+.3,0,1);
  moonL.intensity=e<0?.8:0;starMat.opacity=THREE.MathUtils.clamp(-e*3+.2,0,1);moon.position.set(-Math.cos(a)*600,-e*500+100,-300)}
 // ---------- minimap ----------
-const mm=$('mm').getContext('2d'),mmBg=document.createElement('canvas');mmBg.width=mmBg.height=120;{const c=mmBg.getContext('2d');for(let y=0;y<120;y+=2)for(let x=0;x<120;x+=2){const h=H(x*5-300,y*5-300);c.fillStyle=h<.3?'#24507a':h<16?'#3d6628':h<34?'#59574f':'#c9c6bb';c.fillRect(x,y,2,2)}c.fillStyle='#8a8880';c.beginPath();c.arc((ISL.x+300)/5,(ISL.z+300)/5,5,0,7);c.fill()}
-const mp=(x,z)=>[(x+300)/5,(z+300)/5];
+const mm=$('mm').getContext('2d'),mmBg=document.createElement('canvas');mmBg.width=mmBg.height=120;{const c=mmBg.getContext('2d');for(let y=0;y<120;y+=2)for(let x=0;x<120;x+=2){const wx=x*8.33-500,wz=y*8.33-500,h=H(wx,wz);c.fillStyle=h<.3?'#24507a':wz>320?'#b8864a':wx>320?'#7a6a28':(wx<-330&&h>12)?'#dfe4ee':h<16?'#3d6628':h<34?'#59574f':'#c9c6bb';c.fillRect(x,y,2,2)}c.fillStyle='#8a8880';c.beginPath();c.arc((ISL.x+500)/8.33,(ISL.z+500)/8.33,3,0,7);c.fill()}
+const mp=(x,z)=>[(x+500)/8.33,(z+500)/8.33];
 function drawMM(tg){mm.save();mm.clearRect(0,0,120,120);mm.beginPath();mm.arc(60,60,58,0,7);mm.clip();mm.drawImage(mmBg,0,0);
  mm.fillStyle='#fac775';for(const a of animals)if((S.fr[a.id]||0)>=100){const[x,y]=mp(a.c.g.position.x,a.c.g.position.z);mm.fillRect(x-1,y-1,3,3)}
  mm.fillStyle='#cecbf6';for(const g of pegs){const[x,y]=mp(g.pos.x,g.pos.z);mm.fillRect(x-1.5,y-1.5,3,3)}
@@ -317,7 +334,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
  if(P.dash>0)P.dash-=dt;if(P.reveal>0)P.reveal-=dt;
  const sp=(P.flying?24:(Math.abs(f)>.8?14:9))*(P.dash>0?2.6:1);P.pos.addScaledVector(fwd,f*sp*dt);
  if(up&&!isOpen()){P.flying=true;P.vy=THREE.MathUtils.lerp(P.vy,12,dt*5)}else if(down&&!isOpen())P.vy=THREE.MathUtils.lerp(P.vy,-14,dt*5);else P.vy=THREE.MathUtils.lerp(P.vy,P.flying?Math.sin(t*2)*.4:0,dt*4);
- P.pos.y+=P.vy*dt;P.pos.x=THREE.MathUtils.clamp(P.pos.x,-290,290);P.pos.z=THREE.MathUtils.clamp(P.pos.z,-290,290);P.pos.y=Math.min(P.pos.y,170);
+ P.pos.y+=P.vy*dt;P.pos.x=THREE.MathUtils.clamp(P.pos.x,-490,490);P.pos.z=THREE.MathUtils.clamp(P.pos.z,-490,490);P.pos.y=Math.min(P.pos.y,200);
  const gr=G(P.pos.x,P.pos.z,P.pos.y);if(P.pos.y<=gr+.02){P.pos.y=gr;if(P.flying&&!up)P.flying=false;if(P.vy<0)P.vy=0}else if(!P.flying){P.pos.y=Math.max(gr,P.pos.y-20*dt)}
  player.g.position.copy(P.pos);ROLL+=((P.flying?-tr*.4:0)-ROLL)*Math.min(1,dt*4);player.g.rotation.set(P.flying?-P.vy*.025:0,P.yaw,ROLL);animPeg(player,t,P.flying,Math.abs(f)*(P.dash>0?2:1),P.vy,dt);dayNight(dt);
  // camera
@@ -331,6 +348,8 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
  if(S.food<=0||S.water<=0)S.hp-=1.2*dt;else if(S.food>50&&S.water>50)S.hp=Math.min(100,S.hp+.5*dt);
  if(S.hp<=0){S.hp=60;S.food=S.water=60;P.pos.set(0,G(0,20),20);P.flying=false;msg('Ты обессилел и очнулся на лугу. Не забывай есть и пить!',5000)}
  // orbs
+ featherMeshes.forEach((m,i)=>{m.visible=!S.feath.includes(i);if(!m.visible)return;m.rotation.y+=dt*2;if(m.position.distanceTo(P.pos)<3.2){S.feath.push(i);tone(86,.5);msg(`🍂 Золотое перо (${S.feath.length}/5)`);if(S.feath.length>=5){S.unlocked.push('sunset');fanfare();msg('🍂 Все перья собраны! Открыты Закатные крылья (🎨)',6000)}save()}});
+ iceM.visible=!S.ice&&P.reveal>0&&iceM.position.distanceTo(P.pos)<80;iceM.rotation.y+=dt;
  orbs.forEach((o,i)=>{o.visible=S.stage>=1&&!S.orbs.includes(i);if(!o.visible)return;o.rotation.y+=dt*2;o.position.y+=Math.sin(t*2+i)*.01;
   if(S.stage===1&&o.position.distanceTo(P.pos)<3.2){S.orbs.push(i);tone(84,.5);tone(88,.6,'triangle',.3,AC&&AC.currentTime+.12);msg(`✨ Сфера найдена (${S.orbs.length}/7)`);if(S.orbs.length>=7)setStage(2);save()}});
  runes.forEach((r,i)=>{r.visible=S.stage>=3&&P.reveal>0&&!S.runes.includes(i)&&r.position.distanceTo(P.pos)<70;r.rotation.y+=dt});
